@@ -1,5 +1,5 @@
 let utils = {
-    pointInRect: (x, y, rect) => {
+    pointInInitialRect: (x, y, rect) => {
         return utils.inRange(x, rect.x, rect.x + rect.width) &&
             utils.inRange(y, rect.y, rect.y + rect.height);
     },
@@ -7,12 +7,32 @@ let utils = {
     inRange: (value, min, max) => {
         return value >= Math.min(min, max) && value <= Math.max(min, max);
     },
+    rangeIntersect: (min0, max0, min1, max1) => {
 
-    getDistance: (x1, x2, y1, y2) => {
-        let xDistance = x2 - x1,
-            yDistance = y2 - y1;
-        return Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2));
+        return Math.max(min0, max0) >= Math.min(min1, max1) &&
+            Math.min(min0, max0) <= Math.max(min1, max1);
+    },
+    rectIntersect: (r0, r1) => {
+        return utils.rangeIntersect(r0.x, r0.x + r0.width + 10, r1.x, r1.x + r1.width + 10) &&
+            utils.rangeIntersect(r0.y, r0.y + r0.height + 10, r1.y, r1.y + r1.height + 10);
+    },
+    getCollisionSide: (r0, r1) => {
+        let position = '';
+        if (r0.y + r0.height < r1.y) {
+            position = 'top';
+        }
+        if (r0.y >= r1.y + r1.height) {
+            position ='bottom';
+        }
+        if (r0.x >= r1.x + r1.width) {
+            position = 'right';
+        }
+        if (r0.x + r0.width <= r1.x) {
+            position = 'left';
+        }
+        return position;
     }
+
 };
 
 export default utils;
