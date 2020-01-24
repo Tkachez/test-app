@@ -1,7 +1,7 @@
 let path = require('path');
 
 let conf = {
-    entry: './src/index.js',
+    entry: './src/index.ts',
     output: {
         path: path.resolve(__dirname,'./dist/main.js'),
         filename: 'main.js',
@@ -13,15 +13,19 @@ let conf = {
     module: {
         rules: [
             {
-                test: /\.js$/,
-                loader: 'babel-loader'
+                test: /\.ts$/,
+                use: 'ts-loader',
+                exclude: /node_modules/
             },
             {
                 test: /\.css$/,
                 use: ['style-loader', 'css-loader']
             }
         ]
-    }
+    },
+    resolve: {
+        extensions: [ '.ts', '.js' ],
+    },
 };
 
 module.exports = (env,options) => {
