@@ -1,10 +1,28 @@
 import {constants} from "./constants";
 
-let utils = {
+type rectangle = {
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    fillColor: string
+}
+
+type utils = {
+    pointInRect: (x: number, y: number, rect: rectangle) => boolean,
+    inRange: (value: number, x: number, y: number) => boolean,
+    getDistance: (r0: rectangle, r1: rectangle) => number,
+    rangeIntersect: (min0: number, max: number, min1: number, max1: number) => boolean,
+    getCollisionSide: (r0: rectangle, r1: rectangle) => string,
+    rectIntersect: (r0: rectangle, r1: rectangle) => boolean
+}
+
+let utils: utils = {
     pointInRect: (x, y, rect) => {
         return utils.inRange(x, rect.x, rect.x + rect.width) &&
             utils.inRange(y, rect.y, rect.y + rect.height);
     },
+
     inRange: (value, min, max) => {
         return value >= Math.min(min, max) && value <= Math.max(min, max);
     },

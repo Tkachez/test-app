@@ -15,5 +15,5 @@ export const constants = {
         COLLISION_FILL_COLOR: 'red',
     },
     BASIC_SHAPES_QUANTITY: 5,
-    COLLISION_DISTANCE: 10,
+    COLLISION_DISTANCE: 20,
 };
