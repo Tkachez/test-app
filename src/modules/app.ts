@@ -2,99 +2,102 @@ import {constants} from './constants';
 import utils from "./utils";
 import Rectangle from "./rectangle";
 
+type rectangle = {
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    fillColor: string
+}
 
-export const app: (context: CanvasRenderingContext2D, width: number, height: number) => void = (context, width, height) => {
-    return init(context, width, height);
-};
-
-const init: (context: CanvasRenderingContext2D, width: number, height: number) => void = (context, width, height) => {
-    const activeElements: object[] = [];
-    const offset: { x: number, y: number } = {x: 0, y: 0};
-
-    type rectangle = {
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-        fillColor: string
+export class App {
+    constructor(context: CanvasRenderingContext2D, width: number, height: number) {
+        this.context = context;
+        this.width = width;
+        this.height = height;
     }
 
-    let isCollisionDetected: boolean = false,
-        attachedDragHandle: rectangle,
-        movingElement: rectangle,
-        dragHandle: rectangle,
-        mountedElement: rectangle;
-
-    const draw: () => void = () => {
-        const staticElements: object[] = [
-            new Rectangle(20, 20, 100, 100, 'wheat'),
-            new Rectangle(20, 20, 80, 100, 'wheat'),
-            new Rectangle(20, 20, 70, 100, 'wheat'),
-            new Rectangle(20, 20, 90, 100, 'wheat'),
-        ];
-        let elements: object[] = [...staticElements, ...activeElements];
-        elements = elements.filter(Boolean);
-        context.clearRect(0, 0, width, height);
-        elements.map(el => drawElements(el));
+    private rectangles: rectangle[];
+    private activeElements: rectangle[];
+    private staticElements: rectangle[];
+    private context: CanvasRenderingContext2D;
+    private isCollisionDetected: boolean = false;
+    private dragHandle: rectangle;
+    private mountedElement: rectangle;
+    private attachedDragHandle: rectangle;
+    private width: number;
+    private height: number;
+    private offset: {
+        x: number,
+        y: number
     };
 
-    const drawElements: (rectangle) => void = (el) => {
-        context.fillStyle = el.fillColor;
-        context.beginPath();
-        context.fillRect(el.x, el.y, el.width, el.height);
-        context.fill();
+    private drawElements: (el: rectangle) => void = (el) => {
+        this.context.fillStyle = 'wheat';
+        this.context.beginPath();
+        this.context.fillRect(el.x, el.y, el.width, el.height);
+        this.context.fill();
     };
 
-    const initUpdate: (join: boolean, event: any) => void = (join, event) => {
-        let side = utils.getCollisionSide(dragHandle, mountedElement);
-        isCollisionDetected = join;
-        join ? attachDragHandle(side) : detach(event);
+    private draw: () => void = () => {
+        this.rectangles = this.activeElements ? [...this.staticElements, ...this.activeElements]
+            : [...this.staticElements];
+
+        return this.rectangles.map(el => this.drawElements(el));
     };
 
-    const attachDragHandle: (side: string) => void = (side) => {
+    private initUpdate: (join: boolean, event: any) => void = (join, event) => {
+        let side = utils.getCollisionSide(this.dragHandle, this.mountedElement);
+        this.isCollisionDetected = join;
+        join ? this.attachDragHandle(side) : this.detach(event);
+    };
+
+    private attachDragHandle: (side: string) => void = (side) => {
         switch (side) {
             case constants.SIDES.TOP:
-                attachedDragHandle = {
-                    x: mountedElement.x,
-                    y: mountedElement.y - dragHandle.height,
-                    width: dragHandle.width,
-                    height: dragHandle.height,
-                    fillColor: dragHandle.fillColor
-                };
-                dragHandle.fillColor = 'transparent';
+                this.attachedDragHandle = new Rectangle(
+                    this.mountedElement.x,
+                    this.mountedElement.y - this.dragHandle.height,
+                    this.dragHandle.width,
+                    this.dragHandle.height,
+                    this.dragHandle.fillColor);
+                this.activeElements.pop();
+                this.activeElements.push(this.attachedDragHandle);
                 break;
 
             case constants.SIDES.LEFT:
-                attachedDragHandle = {
-                    x: mountedElement.x - dragHandle.width,
-                    y: mountedElement.y,
-                    width: dragHandle.width,
-                    height: dragHandle.height,
-                    fillColor: dragHandle.fillColor
-                };
-                dragHandle.fillColor = 'transparent';
+                this.attachedDragHandle = new Rectangle(this.mountedElement.x - this.dragHandle.width,
+                    this.mountedElement.y,
+                    this.dragHandle.width,
+                    this.dragHandle.height,
+                    this.dragHandle.fillColor
+                );
+                this.activeElements.pop();
+                this.activeElements.push(this.attachedDragHandle);
                 break;
 
             case constants.SIDES.RIGHT:
-                attachedDragHandle = {
-                    x: mountedElement.x + dragHandle.width,
-                    y: mountedElement.y,
-                    width: dragHandle.width,
-                    height: dragHandle.height,
-                    fillColor: dragHandle.fillColor
-                };
-                dragHandle.fillColor = 'transparent';
+                this.attachedDragHandle = new Rectangle(
+                    this.mountedElement.x + this.dragHandle.width,
+                    this.mountedElement.y,
+                    this.dragHandle.width,
+                    this.dragHandle.height,
+                    this.dragHandle.fillColor
+                );
+                this.activeElements.pop();
+                this.activeElements.push(this.attachedDragHandle);
                 break;
 
             case constants.SIDES.BOTTOM:
-                attachedDragHandle = {
-                    x: mountedElement.x,
-                    y: mountedElement.y + dragHandle.height,
-                    width: dragHandle.width,
-                    height: dragHandle.height,
-                    fillColor: dragHandle.fillColor
-                };
-                dragHandle.fillColor = 'transparent';
+                this.attachedDragHandle = new Rectangle(
+                    this.mountedElement.x,
+                    this.mountedElement.y + this.dragHandle.height,
+                    this.dragHandle.width,
+                    this.dragHandle.height,
+                    this.dragHandle.fillColor
+                );
+                this.activeElements.pop();
+                this.activeElements.push(this.attachedDragHandle);
                 break;
 
             default:
@@ -102,64 +105,100 @@ const init: (context: CanvasRenderingContext2D, width: number, height: number) =
         }
     };
 
-    const detach: (event: any) => void = (event) => {
-        dragHandle = {
-            x: event.clientX - offset.x,
-            y: event.clientY - offset.y,
-            width: attachedDragHandle.width,
-            height: attachedDragHandle.height,
-            fillColor: attachedDragHandle.fillColor
-        };
-
-        attachedDragHandle = null;
+    private detach: (event: any) => void =(event) => {
+        console.log(event);
     };
 
-    const updateMountedElement: () => void = () => {
-        console.log(1);
+    private updateMountedElement: () => void = () => {
+      console.log(111);
     };
 
-    document.body.addEventListener("mousedown", (event) => {
-        const onMouseMove: (event: any) => void = (event) => {
-            if (dragHandle) {
-                dragHandle.x = event.clientX - offset.x;
-                dragHandle.y = event.clientY - offset.y;
-            }
-            if (mountedElement) {
-                if (utils.getDistance(dragHandle, mountedElement) > mountedElement.width + constants.COLLISION_DISTANCE && isCollisionDetected) {
-                    initUpdate(false, event);
-                }
-                if (utils.getDistance(dragHandle, mountedElement) < mountedElement.width + constants.COLLISION_DISTANCE && !isCollisionDetected) {
-                    initUpdate(true, event);
-                }
-            }
-        };
-
-        const onMouseUp: () => void = () => {
-            document.body.removeEventListener("mousemove", onMouseMove);
-            document.body.removeEventListener("mouseup", onMouseUp);
-            if (!mountedElement) {
-                mountedElement = dragHandle;
-                activeElements.push(mountedElement);
-            }
-            if (utils.rectIntersect(dragHandle, mountedElement) && isCollisionDetected && attachedDragHandle) {
-                updateMountedElement();
-            }
-            dragHandle = null;
-        };
-
-        if (dragHandle) {
-            document.body.addEventListener("mousemove", onMouseMove);
-            document.body.addEventListener("mouseup", onMouseUp);
-            dragHandle = movingElement;
-            activeElements.push(dragHandle);
-            offset.x = event.clientX - movingElement.x;
-            offset.y = event.clientY - movingElement.y;
+    private onMouseDown: (event: any) => void = (event) => {
+        if (this.dragHandle) {
+            document.body.addEventListener("mousemove", this.onMouseMove);
+            document.body.addEventListener("mouseup", this.onMouseUp);
+            this.activeElements.push(this.dragHandle);
+            this.offset.x = event.clientX - this.dragHandle.x;
+            this.offset.y = event.clientY - this.dragHandle.y;
         }
-    });
+    };
 
-    draw();
+    private onMouseMove = (event) => {
+        if (this.dragHandle) {
+            this.dragHandle.x = event.clientX - this.offset.x;
+            this.dragHandle.y = event.clientY - this.offset.y;
+        }
+        if (this.mountedElement) {
+            if (utils.getDistance(this.dragHandle, this.mountedElement) > this.mountedElement.width + constants.COLLISION_DISTANCE && this.isCollisionDetected) {
+                this.initUpdate(false, event);
+            }
+            if (utils.getDistance(this.dragHandle, this.mountedElement) < this.mountedElement.width + constants.COLLISION_DISTANCE && !this.isCollisionDetected) {
+                this.initUpdate(true, event);
+            }
+        }
+    };
 
-};
+    private onMouseUp: () => void = () => {
+        document.body.removeEventListener("mousemove", this.onMouseMove);
+        document.body.removeEventListener("mouseup", this.onMouseUp);
+        if (!this.mountedElement) {
+            this.mountedElement = this.dragHandle;
+            this.activeElements.push(this.mountedElement);
+        }
+        if (utils.rectIntersect(this.dragHandle, this.mountedElement) && this.isCollisionDetected && this.attachedDragHandle) {
+            this.updateMountedElement();
+        }
+        this.dragHandle = null;
+    };
+
+    private dispatchEvents = () => {
+        document.body.addEventListener('mousedown', this.onMouseDown);
+
+    };
+
+    private animate = () => {
+        this.draw();
+        requestAnimationFrame(this.animate)
+    };
+
+    public init = () => {
+        this.staticElements = [
+            new Rectangle(20, 20, 100, 100, 'wheat'),
+            new Rectangle(20, 140, 90, 100, 'wheat'),
+            new Rectangle(20, 260, 80, 100, 'wheat'),
+            new Rectangle(20, 380, 70, 100, 'wheat'),
+            new Rectangle(20, 500, 60, 100, 'wheat'),
+        ];
+        this.dispatchEvents();
+        this.animate()
+    };
+}
+
+// const initUpdate: (join: boolean, event: any) => void = (join, event) => {
+//     let side = utils.getCollisionSide(dragHandle, mountedElement);
+//     isCollisionDetected = join;
+//     join ? attachDragHandle(side) : detach(event);
+// };
+//
+// const attachDragHandle: (side: string) => void = (side) => {
+//
+// };
+//
+// const detach: (event: any) => void = (event) => {
+//     dragHandle = {
+//         x: event.clientX - offset.x,
+//         y: event.clientY - offset.y,
+//         width: attachedDragHandle.width,
+//         height: attachedDragHandle.height,
+//         fillColor: attachedDragHandle.fillColor
+//     };
+//
+//     attachedDragHandle = null;
+// };
+//
+// const updateMountedElement: () => void = () => {
+//     console.log(1);
+// };
 
 
 

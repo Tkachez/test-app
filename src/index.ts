@@ -1,4 +1,4 @@
-import { app }  from "./modules/app";
+import { App }  from "./modules/app";
 
 window.onload = () => {
     const canvas = <HTMLCanvasElement>document.getElementById("canvas"),
@@ -11,5 +11,6 @@ window.onload = () => {
         canvas.height = window.innerHeight;
     });
 
-    app(context, width, height);
+    const app = new App(context,width,height);
+    app.init();
 };
