@@ -2,14 +2,6 @@ import {constants} from './constants';
 import utils from "./utils";
 import Rectangle from "./rectangle";
 
-type rectangle = {
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    fillColor: string
-}
-
 export class App {
     constructor(context: CanvasRenderingContext2D, width: number, height: number) {
         this.context = context;
@@ -20,17 +12,18 @@ export class App {
     readonly width: number;
     readonly height: number;
 
-    private rectangles: rectangle[];
-    private activeElements: rectangle[] = [];
-    private staticElements: rectangle[];
+    private attachmentSide: string;
+    private rectangles: Rectangle[];
+    private activeElements: Rectangle[] = [];
+    private staticElements: Rectangle[];
     private context: CanvasRenderingContext2D;
     private isCollisionDetected: boolean = false;
-    private dragHandle: rectangle;
-    private mountedElement: rectangle;
-    private attachedDragHandle: rectangle;
+    private dragHandle: Rectangle;
+    private mountedElement: Rectangle;
+    private attachedDragHandle: Rectangle;
     private offset: { x?: number, y?: number } = {};
 
-    private drawElements: (el: rectangle) => void = (el) => {
+    private drawElements: (el: Rectangle) => void = (el) => {
         this.context.fillStyle = 'wheat';
         this.context.beginPath();
         this.context.fillRect(el.x, el.y, el.width, el.height);
@@ -45,13 +38,13 @@ export class App {
     };
 
     private initUpdate: (join: boolean, event: MouseEvent) => void = (join, event) => {
-        let side: string = utils.getCollisionSide(this.dragHandle, this.mountedElement);
+        this.attachmentSide = utils.getCollisionSide(this.dragHandle, this.mountedElement);
         this.isCollisionDetected = join;
-        join ? this.attachDragHandle(side) : this.detach(event);
+        join ? this.attachDragHandle() : this.detach(event);
     };
 
-    private attachDragHandle: (side: string) => void = (side) => {
-        switch (side) {
+    private attachDragHandle: () => void = () => {
+        switch (this.attachmentSide) {
             case constants.SIDES.TOP:
                 this.attachedDragHandle = new Rectangle(
                     this.mountedElement.x,
@@ -114,18 +107,19 @@ export class App {
         this.activeElements.push(this.dragHandle);
     };
 
+
     private updateMountedElement: () => void = () => {
-        console.log('drag handle = ', this.attachedDragHandle);
-        console.log('mounted element = ', this.mountedElement);
-        console.log('active elements = ', this.activeElements);
+        this.activeElements.push(this.attachedDragHandle);
+        this.activeElements = [...new Set(this.activeElements)];
+        this.dragHandle = null;
     };
 
-    private returnToBase: (target: rectangle) => void = (target) => {
+    private returnToBase: (target: Rectangle) => void = () => {
        this.activeElements.pop();
     };
 
-    private getPointedRect: (event: MouseEvent) => rectangle = (event) => {
-        let elements = this.staticElements,
+    private getPointedRect: (event: MouseEvent) => Rectangle = (event) => {
+        let elements = this.rectangles,
             activeElement;
 
         elements.map(el => {
@@ -160,12 +154,17 @@ export class App {
             this.dragHandle.y = event.clientY - this.offset.y;
         }
         if (this.mountedElement) {
-            if (utils.getDistance(this.dragHandle, this.mountedElement) > this.mountedElement.width + constants.COLLISION_DISTANCE && this.isCollisionDetected) {
-                this.initUpdate(false, event);
+            console.log(this.dragHandle.testCollision(this.mountedElement));
+            if(this.dragHandle.testCollision(this.mountedElement)){
+                this.dragHandle.resolveCollision(this.mountedElement);
             }
-            if (utils.getDistance(this.dragHandle, this.mountedElement) < this.mountedElement.width + constants.COLLISION_DISTANCE && !this.isCollisionDetected) {
-                this.initUpdate(true, event);
-            }
+
+            // if (utils.getDistance(this.dragHandle, this.mountedElement) > this.mountedElement.width + constants.COLLISION_DISTANCE && this.isCollisionDetected) {
+            //     // this.initUpdate(false, event);
+            // }
+            // if (utils.getDistance(this.dragHandle, this.mountedElement) < this.mountedElement.width + constants.COLLISION_DISTANCE && !this.isCollisionDetected) {
+            //     // this.initUpdate(true, event);
+            // }
         }
     };
 
@@ -177,6 +176,7 @@ export class App {
         if (utils.rectIntersect(this.dragHandle, this.mountedElement) && this.isCollisionDetected && this.attachedDragHandle) {
             this.updateMountedElement();
         } else {
+            this.attachedDragHandle = null;
             this.returnToBase(this.dragHandle);
         }
 
