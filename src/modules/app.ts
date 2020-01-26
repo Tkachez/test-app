@@ -122,8 +122,6 @@ export class App {
         }
 
         this.mountedElements = [...new Set(this.mountedElements)];
-        this.dragHandle = null;
-        this.activeElements = [...new Set(this.activeElements)];
         document.body.removeEventListener("mousemove", this.onMouseMove);
         document.body.removeEventListener("mouseup", this.onMouseUp);
     };
