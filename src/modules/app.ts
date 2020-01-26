@@ -1,6 +1,6 @@
-import {constants} from './constants';
 import utils from "./utils";
 import Rectangle from "./rectangle";
+import {constants} from "./constants";
 
 export class App {
     constructor(context: CanvasRenderingContext2D, width: number, height: number) {
@@ -11,115 +11,53 @@ export class App {
 
     readonly width: number;
     readonly height: number;
+    readonly context: CanvasRenderingContext2D;
 
-    private attachmentSide: string;
     private rectangles: Rectangle[];
     private activeElements: Rectangle[] = [];
-    private staticElements: Rectangle[];
-    private context: CanvasRenderingContext2D;
-    private isCollisionDetected: boolean = false;
+    private staticElements: Rectangle[] = [];
+    private mountedElements: Rectangle[] = [];
     private dragHandle: Rectangle;
-    private mountedElement: Rectangle;
-    private attachedDragHandle: Rectangle;
     private offset: { x?: number, y?: number } = {};
 
     private drawElements: (el: Rectangle) => void = (el) => {
-        this.context.fillStyle = 'wheat';
+        this.context.fillStyle = el.fillColor;
         this.context.beginPath();
         this.context.fillRect(el.x, el.y, el.width, el.height);
         this.context.fill();
     };
 
     private draw: () => void = () => {
-        this.rectangles = this.activeElements ? [...this.staticElements, ...this.activeElements]
+        this.rectangles = this.activeElements ? [...this.staticElements, ...this.mountedElements, ...this.activeElements]
             : [...this.staticElements];
         this.context.clearRect(0, 0, this.width, this.height);
         return this.rectangles.map(el => this.drawElements(el));
     };
 
-    private initUpdate: (join: boolean, event: MouseEvent) => void = (join, event) => {
-        this.attachmentSide = utils.getCollisionSide(this.dragHandle, this.mountedElement);
-        this.isCollisionDetected = join;
-        join ? this.attachDragHandle() : this.detach(event);
-    };
-
-    private attachDragHandle: () => void = () => {
-        switch (this.attachmentSide) {
-            case constants.SIDES.TOP:
-                this.attachedDragHandle = new Rectangle(
-                    this.mountedElement.x,
-                    this.mountedElement.y - this.dragHandle.height,
-                    this.dragHandle.width,
-                    this.dragHandle.height,
-                    this.dragHandle.fillColor);
-                this.activeElements.pop();
-                this.activeElements.push(this.attachedDragHandle);
-                break;
-
+    private align: (mount: Rectangle, target: Rectangle) => void = (mount,target) => {
+        switch (target.side) {
             case constants.SIDES.LEFT:
-                this.attachedDragHandle = new Rectangle(this.mountedElement.x - this.dragHandle.width,
-                    this.mountedElement.y,
-                    this.dragHandle.width,
-                    this.dragHandle.height,
-                    this.dragHandle.fillColor
-                );
-                this.activeElements.pop();
-                this.activeElements.push(this.attachedDragHandle);
+                target.y = mount.y;
                 break;
-
             case constants.SIDES.RIGHT:
-                this.attachedDragHandle = new Rectangle(
-                    this.mountedElement.x + this.dragHandle.width,
-                    this.mountedElement.y,
-                    this.dragHandle.width,
-                    this.dragHandle.height,
-                    this.dragHandle.fillColor
-                );
-                this.activeElements.pop();
-                this.activeElements.push(this.attachedDragHandle);
+                target.y = mount.y;
                 break;
-
-            case constants.SIDES.BOTTOM:
-                this.attachedDragHandle = new Rectangle(
-                    this.mountedElement.x,
-                    this.mountedElement.y + this.dragHandle.height,
-                    this.dragHandle.width,
-                    this.dragHandle.height,
-                    this.dragHandle.fillColor
-                );
-                this.activeElements.pop();
-                this.activeElements.push(this.attachedDragHandle);
+            case constants.SIDES.TOP:
+                target.x = mount.x;
                 break;
-
-            default:
-                return;
+            case  constants.SIDES.BOTTOM:
+                target.x = mount.x;
+                break;
+            default: return
         }
     };
 
-    private detach: (event: MouseEvent) => void = (event) => {
-        let detachedElement = this.activeElements.pop();
-        this.dragHandle = new Rectangle(
-            event.x,
-            event.y,
-            detachedElement.width,
-            detachedElement.height,
-            detachedElement.fillColor);
-        this.activeElements.push(this.dragHandle);
-    };
-
-
-    private updateMountedElement: () => void = () => {
-        this.activeElements.push(this.attachedDragHandle);
-        this.activeElements = [...new Set(this.activeElements)];
-        this.dragHandle = null;
-    };
-
-    private returnToBase: (target: Rectangle) => void = () => {
-       this.activeElements.pop();
+    private returnToBase: () => void = () => {
+        this.activeElements.pop();
     };
 
     private getPointedRect: (event: MouseEvent) => Rectangle = (event) => {
-        let elements = this.rectangles,
+        let elements = this.staticElements,
             activeElement;
 
         elements.map(el => {
@@ -153,33 +91,38 @@ export class App {
             this.dragHandle.x = event.clientX - this.offset.x;
             this.dragHandle.y = event.clientY - this.offset.y;
         }
-        if (this.mountedElement) {
-            console.log(this.dragHandle.testCollision(this.mountedElement));
-            if(this.dragHandle.testCollision(this.mountedElement)){
-                this.dragHandle.resolveCollision(this.mountedElement);
-            }
-
-            // if (utils.getDistance(this.dragHandle, this.mountedElement) > this.mountedElement.width + constants.COLLISION_DISTANCE && this.isCollisionDetected) {
-            //     // this.initUpdate(false, event);
-            // }
-            // if (utils.getDistance(this.dragHandle, this.mountedElement) < this.mountedElement.width + constants.COLLISION_DISTANCE && !this.isCollisionDetected) {
-            //     // this.initUpdate(true, event);
-            // }
+        if (this.mountedElements.length) {
+            this.mountedElements.map(el => {
+                if (this.dragHandle.testCollision(el)) {
+                    this.dragHandle.resolveCollision(el);
+                    this.dragHandle.fillColor = constants.RECTANGLE.COLLISION_FILL_COLOR;
+                    el.fillColor = constants.RECTANGLE.COLLISION_FILL_COLOR;
+                } else {
+                    this.dragHandle.fillColor = constants.RECTANGLE.FILL_COLOR;
+                    el.fillColor = constants.RECTANGLE.FILL_COLOR;
+                }
+            });
         }
     };
 
     private onMouseUp: () => void = () => {
-        if (!this.mountedElement) {
-            this.mountedElement = this.dragHandle;
-            this.activeElements.push(this.mountedElement);
-        }
-        if (utils.rectIntersect(this.dragHandle, this.mountedElement) && this.isCollisionDetected && this.attachedDragHandle) {
-            this.updateMountedElement();
+        if (!this.mountedElements.length) {
+            this.mountedElements.push(this.dragHandle);
         } else {
-            this.attachedDragHandle = null;
-            this.returnToBase(this.dragHandle);
+            this.mountedElements.map(el => {
+                if(this.dragHandle.testCollision(el)){
+                    this.mountedElements.push(this.dragHandle);
+                    this.align(el,this.dragHandle);
+                    el.fillColor = constants.RECTANGLE.FILL_COLOR;
+                    this.dragHandle.fillColor = constants.RECTANGLE.FILL_COLOR;
+                } else {
+                    this.returnToBase();
+                }
+            });
         }
 
+        this.mountedElements = [...new Set(this.mountedElements)];
+        this.dragHandle = null;
         this.activeElements = [...new Set(this.activeElements)];
         document.body.removeEventListener("mousemove", this.onMouseMove);
         document.body.removeEventListener("mouseup", this.onMouseUp);
@@ -196,11 +139,11 @@ export class App {
 
     public init: () => void = () => {
         this.staticElements = [
-            new Rectangle(20, 20, 100, 100, 'wheat'),
-            new Rectangle(20, 140, 90, 100, 'wheat'),
-            new Rectangle(20, 260, 80, 100, 'wheat'),
-            new Rectangle(20, 380, 70, 100, 'wheat'),
-            new Rectangle(20, 500, 60, 100, 'wheat'),
+            new Rectangle(20, 20, 100, 100, constants.RECTANGLE.FILL_COLOR),
+            new Rectangle(20, 140, 90, 100, constants.RECTANGLE.FILL_COLOR),
+            new Rectangle(20, 260, 80, 100, constants.RECTANGLE.FILL_COLOR),
+            new Rectangle(20, 380, 70, 100, constants.RECTANGLE.FILL_COLOR),
+            new Rectangle(20, 500, 60, 100, constants.RECTANGLE.FILL_COLOR),
         ];
         this.dispatchEvents();
         this.animate()
