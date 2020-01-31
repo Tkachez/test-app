@@ -11,8 +11,9 @@ export const constants = {
         FILL_COLOR: 'wheat',
         BORDER_COLOR: 'black',
         BORDER_WIDTH: 2,
-        COLLISION_FILL_COLOR: 'darkgreen',
+        COLLISION_FILL_COLOR: 'darkred',
     },
     BASIC_SHAPES_QUANTITY: 5,
     COLLISION_DISTANCE: 20,
+    ALIGNMENT_DISTANCE: 10
 };

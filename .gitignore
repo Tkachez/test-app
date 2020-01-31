@@ -1,1 +1,6 @@
 /node_modules/
+/.idea/.gitignore
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/test-app.iml
+/.idea/vcs.xml

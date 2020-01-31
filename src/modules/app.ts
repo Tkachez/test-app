@@ -14,7 +14,6 @@ export class App {
     readonly context: CanvasRenderingContext2D;
 
     private rectangles: Rectangle[];
-    private activeElements: Rectangle[] = [];
     private staticElements: Rectangle[] = [];
     private mountedElements: Rectangle[] = [];
     private dragHandle: Rectangle;
@@ -28,56 +27,38 @@ export class App {
     };
 
     private draw: () => void = () => {
-        this.rectangles = this.activeElements ? [...this.staticElements, ...this.mountedElements, ...this.activeElements]
-            : [...this.staticElements];
+        this.rectangles = [...this.staticElements, ...this.mountedElements];
+        if(this.dragHandle){
+            this.rectangles.push(this.dragHandle);
+        }
         this.context.clearRect(0, 0, this.width, this.height);
         return this.rectangles.map(el => this.drawElements(el));
     };
 
-    private align: (mount: Rectangle, target: Rectangle) => void = (mount,target) => {
-        switch (target.side) {
-            case constants.SIDES.LEFT:
-                target.y = mount.y;
-                break;
-            case constants.SIDES.RIGHT:
-                target.y = mount.y;
-                break;
-            case constants.SIDES.TOP:
-                target.x = mount.x;
-                break;
-            case  constants.SIDES.BOTTOM:
-                target.x = mount.x;
-                break;
-            default: return
-        }
-    };
-
-    private returnToBase: () => void = () => {
-        this.activeElements.pop();
+    private initAlign: () => void = () => {
+       this.mountedElements.push(this.dragHandle);
     };
 
     private getPointedRect: (event: MouseEvent) => Rectangle = (event) => {
-        let elements = this.staticElements,
-            activeElement;
-
-        elements.map(el => {
-            if (utils.pointInRect(event.x, event.y, el)) {
-                this.dragHandle = (new Rectangle(
-                    el.x,
-                    el.y,
-                    el.width,
-                    el.height,
-                    el.fillColor
+        let activeElement: Rectangle;
+        for (let element of this.staticElements){
+            if (utils.pointInRect(event.x, event.y, element)) {
+                activeElement = (new Rectangle(
+                    element.x,
+                    element.y,
+                    element.width,
+                    element.height,
+                    element.fillColor
                 ));
-                this.activeElements.push(this.dragHandle);
                 return activeElement;
             }
-        });
+        }
         return null;
     };
 
     private onMouseDown: (event: MouseEvent) => void = (event) => {
-        this.getPointedRect(event);
+        this.dragHandle = this.getPointedRect(event);
+
         if (this.dragHandle) {
             document.body.addEventListener("mousemove", this.onMouseMove);
             document.body.addEventListener("mouseup", this.onMouseUp);
@@ -91,7 +72,7 @@ export class App {
             this.dragHandle.x = event.clientX - this.offset.x;
             this.dragHandle.y = event.clientY - this.offset.y;
         }
-        if (this.mountedElements.length) {
+        if (this.mountedElements.length && this.dragHandle) {
             this.mountedElements.map(el => {
                 if (this.dragHandle.testCollision(el)) {
                     this.dragHandle.resolveCollision(el);
@@ -108,17 +89,14 @@ export class App {
     private onMouseUp: () => void = () => {
         if (!this.mountedElements.length) {
             this.mountedElements.push(this.dragHandle);
-        } else {
+        } else if (this.mountedElements && this.dragHandle) {
             this.mountedElements.map(el => {
-                if(this.dragHandle.testCollision(el)){
-                    this.mountedElements.push(this.dragHandle);
-                    this.align(el,this.dragHandle);
+                if(this.dragHandle.testCollision(el)) {
                     el.fillColor = constants.RECTANGLE.FILL_COLOR;
                     this.dragHandle.fillColor = constants.RECTANGLE.FILL_COLOR;
-                } else {
-                    this.returnToBase();
                 }
             });
+            this.initAlign();
         }
 
         this.mountedElements = [...new Set(this.mountedElements)];

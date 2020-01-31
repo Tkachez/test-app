@@ -14,7 +14,6 @@ class Rectangle {
     public width: number;
     public height: number;
     public fillColor: string;
-    public side: string;
 
     private getCenterX: () => number = () => this.x + this.width * 0.5;
     private getCenterY: () => number = () => this.y + this.height * 0.5;
@@ -43,21 +42,28 @@ class Rectangle {
         if (vector_y * vector_y > vector_x * vector_x) {// square to remove negatives
             // is the y vector pointing down?
             if (vector_y > 0) {
-                this.side = constants.SIDES.BOTTOM;
-                this.y = rectangle.getBottom();
+                this.y = rectangle.y + rectangle.height;
             } else { // the y vector is pointing up
-                this.side = constants.SIDES.TOP;
                 this.y = rectangle.y - this.height;
+            }
+            if (this.width < rectangle.width) {
+                if (this.x + this.width >= rectangle.x && this.x + this.width <= rectangle.x + rectangle.width / 2) {
+                   this.x = rectangle.x;
+                } else if (this.x <= rectangle.x + rectangle.width / 2 && this.x + this.width >= rectangle.x + rectangle.width) {
+                    this.x = rectangle.x + rectangle.width - this.width;
+                } else {
+                    this.x = rectangle.x;
+                }
             }
         } else { // the x vector is longer than the y vector
             // is the x vector pointing right?
             if (vector_x > 0) {
-                this.side = constants.SIDES.RIGHT;
-                this.x = rectangle.getRight();
+                this.x = rectangle.x + rectangle.width;
             } else { // the x vector is pointing left
-                this.side = constants.SIDES.LEFT;
                 this.x = rectangle.x - this.width;
-
+            }
+            if(this.y + this.height > rectangle.y + rectangle.height - constants.COLLISION_DISTANCE && this.y <= rectangle.y + constants.COLLISION_DISTANCE ){
+                this.y = rectangle.y;
             }
         }
 
