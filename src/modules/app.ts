@@ -35,8 +35,12 @@ export class App {
         return this.rectangles.map(el => this.drawElements(el));
     };
 
-    private initAlign: () => void = () => {
+    private saveToMounted: () => void = () => {
        this.mountedElements.push(this.dragHandle);
+    };
+
+    private returnToBase: () => void = () => {
+        this.dragHandle = null;
     };
 
     private getPointedRect: (event: MouseEvent) => Rectangle = (event) => {
@@ -87,18 +91,20 @@ export class App {
     };
 
     private onMouseUp: () => void = () => {
+        let mountsNeedUpdate = false;
         if (!this.mountedElements.length) {
             this.mountedElements.push(this.dragHandle);
-        } else if (this.mountedElements && this.dragHandle) {
+        } else if (this.mountedElements.length && this.dragHandle) {
             this.mountedElements.map(el => {
                 if(this.dragHandle.testCollision(el)) {
                     el.fillColor = constants.RECTANGLE.FILL_COLOR;
                     this.dragHandle.fillColor = constants.RECTANGLE.FILL_COLOR;
+                    mountsNeedUpdate = true
                 }
             });
-            this.initAlign();
         }
 
+        mountsNeedUpdate ? this.saveToMounted() : this.returnToBase();
         this.mountedElements = [...new Set(this.mountedElements)];
         document.body.removeEventListener("mousemove", this.onMouseMove);
         document.body.removeEventListener("mouseup", this.onMouseUp);
