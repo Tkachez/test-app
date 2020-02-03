@@ -15,55 +15,30 @@ class Rectangle {
     public height: number;
     public fillColor: string;
 
-    private vector: number;
+    private get cx() { return this.x + this.width * 0.5; }
+    private get cy() { return this.y + this.height * 0.5; }
 
-    private getCenterX: () => number = () => this.x + this.width * 0.5;
-    private getCenterY: () => number = () => this.y + this.height * 0.5;
-    private getLeft: () => number = () => this.x;
-    private getRight: () => number = () => this.x + this.width;
-    private getTop: () => number = () => this.y;
-    private getBottom: () => number = () => this.y + this.height;
 
-    private align: (side: string , attribute: string ,rectangle: Rectangle) => void = (side, attribute, rectangle) => {
-        if (this[side] + this[attribute] >= rectangle[side] && this[side] >= rectangle[side] - constants.COLLISION_DISTANCE && this[side] + this[attribute] <= rectangle[side] + rectangle[attribute]) {
-            this[side] = rectangle[side];
-        } else if (this[side] + this[attribute] <= rectangle[side] + rectangle[attribute] + constants.COLLISION_DISTANCE && this[side] >= rectangle[side] + constants.COLLISION_DISTANCE) {
-            this[side] = rectangle[side] + rectangle[attribute] - this[attribute];
-        }
-    };
+    public resolveCollision: (rectangle: Rectangle) => boolean = (rectangle) => {
+        let dx = rectangle.cx - this.cx;// x difference between centers
+        let dy = rectangle.cy - this.cy;// y difference between centers
+        let aw = (rectangle.width + this.width + constants.COLLISION_DISTANCE) * 0.5;
+        let ah = (rectangle.height + this.height + constants.COLLISION_DISTANCE) * 0.5;
 
-    public testCollision: (rectangle: Rectangle) => boolean = (rectangle) => {
-        let result: boolean;
-        (this.getTop() > rectangle.getBottom() + constants.COLLISION_DISTANCE ||
-            this.getRight() < rectangle.getLeft() - constants.COLLISION_DISTANCE ||
-            this.getBottom() < rectangle.getTop() - constants.COLLISION_DISTANCE ||
-            this.getLeft() > rectangle.getRight() + constants.COLLISION_DISTANCE) ?
-            result = false : result = true;
-        return result;
-    };
+        /* If either distance is greater than the average dimension there is no collision. */
+        if (Math.abs(dx) > aw || Math.abs(dy) > ah) return false;
 
-    public resolveCollision: (rectangle: Rectangle) => void = (rectangle) => {
-        let vectorX, vectorY;
-
-        vectorX = this.getCenterX() - rectangle.getCenterX();
-        vectorY = this.getCenterY() - rectangle.getCenterY();
-
-        if (vectorY * vectorY > vectorX * vectorX) {
-            if (vectorY > 0) {
-                this.y = rectangle.y + rectangle.height;
-            } else {
-                this.y = rectangle.y - this.height;
-            }
-            this.align('x','width', rectangle);
+        /* To determine which region of this rectangle the rect's center
+        point is in, we have to account for the scale of the this rectangle.
+        To do that, we divide dx and dy by it's width and height respectively. */
+        if (Math.abs(dx / this.width) > Math.abs(dy / this.height)) {
+            if (dx < 0) rectangle.x = this.x - rectangle.width;
+            else rectangle.x = this.x + this.width;
         } else {
-            if (vectorX > 0) {
-                this.x = rectangle.x + rectangle.width;
-            } else {
-                this.x = rectangle.x - this.width;
-            }
-            this.align('y', 'height', rectangle);
+            if (dy < 0) rectangle.y = this.y - rectangle.height;
+            else rectangle.y = this.y + this.height;
         }
-
+        return true;
     }
 }
 

@@ -24,28 +24,23 @@ export class App {
         this.context.beginPath();
         this.context.fillRect(el.x, el.y, el.width, el.height);
         this.context.fill();
+        this.context.beginPath();
+        this.context.rect(el.x, el.y, el.width, el.height);
+        this.context.stroke();
     };
 
     private draw: () => void = () => {
         this.rectangles = [...this.staticElements, ...this.mountedElements];
-        if(this.dragHandle){
+        if (this.dragHandle) {
             this.rectangles.push(this.dragHandle);
         }
         this.context.clearRect(0, 0, this.width, this.height);
         return this.rectangles.map(el => this.drawElements(el));
     };
 
-    private saveToMounted: () => void = () => {
-       this.mountedElements.push(this.dragHandle);
-    };
-
-    private returnToBase: () => void = () => {
-        this.dragHandle = null;
-    };
-
     private getPointedRect: (event: MouseEvent) => Rectangle = (event) => {
         let activeElement: Rectangle;
-        for (let element of this.staticElements){
+        for (let element of this.staticElements) {
             if (utils.pointInRect(event.x, event.y, element)) {
                 activeElement = (new Rectangle(
                     element.x,
@@ -77,35 +72,33 @@ export class App {
             this.dragHandle.y = event.clientY - this.offset.y;
         }
         if (this.mountedElements.length && this.dragHandle) {
-            this.mountedElements.map(el => {
-                if (this.dragHandle.testCollision(el)) {
-                    this.dragHandle.resolveCollision(el);
+            this.mountedElements.map(rect =>  {
+                if (rect.resolveCollision(this.dragHandle)) {
+                    rect.fillColor = constants.RECTANGLE.COLLISION_FILL_COLOR;
                     this.dragHandle.fillColor = constants.RECTANGLE.COLLISION_FILL_COLOR;
-                    el.fillColor = constants.RECTANGLE.COLLISION_FILL_COLOR;
                 } else {
+                    rect.fillColor = constants.RECTANGLE.FILL_COLOR;
                     this.dragHandle.fillColor = constants.RECTANGLE.FILL_COLOR;
-                    el.fillColor = constants.RECTANGLE.FILL_COLOR;
                 }
             });
         }
     };
 
     private onMouseUp: () => void = () => {
-        let mountsNeedUpdate = false;
         if (!this.mountedElements.length) {
             this.mountedElements.push(this.dragHandle);
         } else if (this.mountedElements.length && this.dragHandle) {
             this.mountedElements.map(el => {
-                if(this.dragHandle.testCollision(el)) {
+                if (this.dragHandle.resolveCollision(el)) {
                     el.fillColor = constants.RECTANGLE.FILL_COLOR;
                     this.dragHandle.fillColor = constants.RECTANGLE.FILL_COLOR;
-                    mountsNeedUpdate = true
+                    this.mountedElements.push(this.dragHandle);
                 }
             });
         }
-
-        mountsNeedUpdate ? this.saveToMounted() : this.returnToBase();
+        this.dragHandle = null;
         this.mountedElements = [...new Set(this.mountedElements)];
+        this.mountedElements.map(rect => rect.fillColor = constants.RECTANGLE.FILL_COLOR);
         document.body.removeEventListener("mousemove", this.onMouseMove);
         document.body.removeEventListener("mouseup", this.onMouseUp);
     };
