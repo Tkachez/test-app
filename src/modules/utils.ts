@@ -1,20 +1,14 @@
-import {constants} from "./constants";
-
 type rectangle = {
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    fillColor: string
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    fillColor: string;
 }
 
 type utils = {
     pointInRect: (x: number, y: number, rect: rectangle) => boolean,
     inRange: (value: number, x: number, y: number) => boolean,
-    getDistance: (r0: rectangle, r1: rectangle) => number,
-    rangeIntersect: (min0: number, max: number, min1: number, max1: number) => boolean,
-    getCollisionSide: (r0: rectangle, r1: rectangle) => string,
-    rectIntersect: (r0: rectangle, r1: rectangle) => boolean
 }
 
 let utils: utils = {
@@ -25,38 +19,6 @@ let utils: utils = {
 
     inRange: (value, min, max) => {
         return value >= Math.min(min, max) && value <= Math.max(min, max);
-    },
-
-    getDistance: (r0, r1) => {
-        let xDistance = r1.x - r0.x;
-        let yDistance = r1.y - r0.y;
-
-        return Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2));
-    },
-    rangeIntersect: (min0, max0, min1, max1) => {
-
-        return Math.max(min0, max0) >= Math.min(min1, max1) &&
-            Math.min(min0, max0) <= Math.max(min1, max1);
-    },
-    rectIntersect: (r0, r1) => {
-        return utils.rangeIntersect(r0.x, r0.x + r0.width + constants.COLLISION_DISTANCE, r1.x, r1.x + r1.width + constants.COLLISION_DISTANCE) &&
-            utils.rangeIntersect(r0.y, r0.y + r0.height + constants.COLLISION_DISTANCE, r1.y, r1.y + r1.height + constants.COLLISION_DISTANCE);
-    },
-    getCollisionSide: (r0, r1) => {
-        let position = '';
-        if (r0.y + r0.height <= r1.y) {
-            position = constants.SIDES.TOP;
-        }
-        if (r0.y >= r1.y + r1.height) {
-            position = constants.SIDES.BOTTOM;
-        }
-        if (r0.x >= r1.x + r1.width) {
-            position = constants.SIDES.RIGHT;
-        }
-        if (r0.x + r0.width <= r1.x) {
-            position = constants.SIDES.LEFT;
-        }
-        return position;
     },
 };
 
