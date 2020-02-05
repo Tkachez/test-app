@@ -72,8 +72,9 @@ export class App {
             this.dragHandle.y = event.clientY - this.offset.y;
         }
         if (this.mountedElements.length && this.dragHandle) {
-            this.mountedElements.map(rect =>  {
-                if (rect.resolveCollision(this.dragHandle)) {
+            this.mountedElements.map((rect) =>  {
+                if (this.testCollision(rect)) {
+                    this.resolveCollision(rect);
                     rect.fillColor = constants.RECTANGLE.COLLISION_FILL_COLOR;
                     this.dragHandle.fillColor = constants.RECTANGLE.COLLISION_FILL_COLOR;
                 } else {
@@ -84,12 +85,42 @@ export class App {
         }
     };
 
+    private testCollision: (rectangle: Rectangle) => boolean = (rectangle) => {
+        let dx = rectangle.cx - this.dragHandle.cx;// x difference between centers
+        let dy = rectangle.cy - this.dragHandle.cy;// y difference between centers
+        let aw = (rectangle.width + this.dragHandle.width + constants.COLLISION_DISTANCE) * 0.5;
+        let ah = (rectangle.height + this.dragHandle.height + constants.COLLISION_DISTANCE) * 0.5;
+
+        return !(Math.abs(dx) > aw || Math.abs(dy) > ah);
+    }
+
+    private resolveCollision: (rectangle: Rectangle) => void = (rectangle) => {
+
+        let dx = rectangle.cx - this.dragHandle.cx;// x difference between centers
+        let dy = rectangle.cy - this.dragHandle.cy;// y difference between centers
+
+        if (Math.abs(dx / this.dragHandle.width) > Math.abs(dy / this.dragHandle.height)) {
+            if (dx < 0) {
+                this.dragHandle.x = rectangle.x + rectangle.width;
+
+            } else {
+                this.dragHandle.x = rectangle.x - this.dragHandle.width;
+            }
+        } else {
+            if (dy < 0) {
+                this.dragHandle.y = rectangle.y + rectangle.height;
+            } else {
+                this.dragHandle.y = rectangle.y - this.dragHandle.height;
+            }
+        }
+    }
+
     private onMouseUp: () => void = () => {
         if (!this.mountedElements.length) {
             this.mountedElements.push(this.dragHandle);
         } else if (this.mountedElements.length && this.dragHandle) {
             this.mountedElements.map(el => {
-                if (this.dragHandle.resolveCollision(el)) {
+                if (this.testCollision(el)) {
                     el.fillColor = constants.RECTANGLE.FILL_COLOR;
                     this.dragHandle.fillColor = constants.RECTANGLE.FILL_COLOR;
                     this.mountedElements.push(this.dragHandle);
