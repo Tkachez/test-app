@@ -16,6 +16,7 @@ export class App {
     private rectangles: Rectangle[];
     private staticElements: Rectangle[] = [];
     private mountedElements: Rectangle[] = [];
+    private intersectedElement: Rectangle;
     private dragHandle: Rectangle;
     private offset: { x?: number, y?: number } = {};
 
@@ -72,7 +73,7 @@ export class App {
             this.dragHandle.y = event.clientY - this.offset.y;
         }
         if (this.mountedElements.length && this.dragHandle) {
-            this.mountedElements.map((rect) =>  {
+            this.mountedElements.map(rect => {
                 if (this.testCollision(rect)) {
                     this.resolveCollision(rect);
                     rect.fillColor = constants.RECTANGLE.COLLISION_FILL_COLOR;
@@ -80,6 +81,9 @@ export class App {
                 } else {
                     rect.fillColor = constants.RECTANGLE.FILL_COLOR;
                     this.dragHandle.fillColor = constants.RECTANGLE.FILL_COLOR;
+                }
+                if (this.testIntersection()) {
+                    this.resolveIntersection(event);
                 }
             });
         }
@@ -92,7 +96,38 @@ export class App {
         let ah = (rectangle.height + this.dragHandle.height + constants.COLLISION_DISTANCE) * 0.5;
 
         return !(Math.abs(dx) > aw || Math.abs(dy) > ah);
-    }
+    };
+
+    private testIntersection: () => boolean = () => {
+        let intersected = false;
+        this.mountedElements.map(rect => {
+            if ((this.dragHandle.x > rect.x && this.dragHandle.x + this.dragHandle.width <= rect.x + rect.width)
+                && this.dragHandle.y + this.dragHandle.height > rect.y && this.dragHandle.y < rect.y + rect.height) {
+                this.intersectedElement = rect;
+                intersected = true;
+            }
+        });
+        return intersected;
+    };
+
+    private resolveIntersection: (event: MouseEvent) => void = (event) => {
+        let xPoints = this.mountedElements.map(rect => rect.x),
+            leftEdge = Math.min(...xPoints),
+            rightEdge;
+
+        this.mountedElements.map(rect => {
+            if (rect.x === Math.max(...xPoints)) {
+                rightEdge = rect.x + rect.width;
+            }
+        });
+
+       if (leftEdge * 2 + constants.COLLISION_DISTANCE < event.clientX) {
+           this.dragHandle.x = rightEdge + this.dragHandle.width;
+       } else {
+           this.dragHandle.x = leftEdge - this.dragHandle.width;
+       }
+
+    };
 
     private resolveCollision: (rectangle: Rectangle) => void = (rectangle) => {
 
@@ -113,7 +148,7 @@ export class App {
                 this.dragHandle.y = rectangle.y - this.dragHandle.height;
             }
         }
-    }
+    };
 
     private onMouseUp: () => void = () => {
         if (!this.mountedElements.length) {
