@@ -1,5 +1,3 @@
-import {constants} from './constants'
-
 class Rectangle {
     constructor(x: number, y: number, width: number, height: number, fillColor: string) {
         this.x = x;

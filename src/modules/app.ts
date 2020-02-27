@@ -121,7 +121,7 @@ export class App {
             }
         });
 
-       if (leftEdge * 2 + constants.COLLISION_DISTANCE < event.clientX) {
+       if (leftEdge * 2 < event.clientX) {
            this.dragHandle.x = rightEdge + this.dragHandle.width;
        } else {
            this.dragHandle.x = leftEdge - this.dragHandle.width;
